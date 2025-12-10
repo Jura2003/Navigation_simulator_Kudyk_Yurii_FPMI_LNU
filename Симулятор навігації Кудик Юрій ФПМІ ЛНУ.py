@@ -35,7 +35,7 @@ next_color_index = 0
 
 PIXELS_PER_METER = 20
 
-# --- Клас для Маяка ---
+#  Клас для Маяка 
 class Beacon:
     def __init__(self, position_tuple, color, power_dbm, beacon_id, radius=7):
         self.position = position_tuple
@@ -79,7 +79,7 @@ WAVE_START_ALPHA = 200
 WAVE_THICKNESS = 2
 NEW_WAVE_INTERVAL = 45
 
-# --- Параметри симуляції (тепер можна змінювати) ---
+#Параметри симуляції 
 PATH_LOSS_EXPONENT_N = 3.0
 RSSI_NOISE_STD_DEV_DB = 2.0
 RECEIVER_SENSITIVITY_DBM = -90.0 # dBm
@@ -101,7 +101,7 @@ rssi_font = pygame.font.Font(None, 20)
 distance_font = pygame.font.Font(None, 18)
 
 
-# --- Функції ---
+#  Функції 
 def calculate_distance_pixels(pos1, pos2):
     if pos1 is None or pos2 is None: return float('inf')
     return math.sqrt((pos1[0] - pos2[0])**2 + (pos1[1] - pos2[1])**2)
@@ -115,12 +115,11 @@ def simulate_rssi(beacon_power_A_dbm, distance_pixels, pixels_per_meter, path_lo
         path_loss_db = 10 * path_loss_n * math.log10(distance_m)
     elif distance_m <= 0: # Прямо на маяку або помилка
         path_loss_db = 0 # Немає втрат шляху (або максимальний сигнал)
-    # Для 0 < distance_m <= 1.0, path_loss_db буде негативним, що означає сигнал сильніший за A.
-    # Це відповідає моделі, де A - це RSSI@1m.
+   
 
     rssi_ideal = beacon_power_A_dbm - path_loss_db
     noise = 0
-    if noise_std_dev_db > 0: # Додаємо шум, тільки якщо він заданий
+    if noise_std_dev_db > 0:
         noise = random.normalvariate(0, noise_std_dev_db)
     rssi_noisy = rssi_ideal + noise
     return rssi_noisy
@@ -128,12 +127,12 @@ def simulate_rssi(beacon_power_A_dbm, distance_pixels, pixels_per_meter, path_lo
 def rssi_to_distance_meters(rssi_at_target_dbm, beacon_power_A_dbm, path_loss_n):
     # RSSI = A - 10*n*log10(d)  =>  10*n*log10(d) = A - RSSI
     # log10(d) = (A - RSSI) / (10*n)  => d = 10 ^ ((A - RSSI) / (10*n))
-    if path_loss_n == 0: return float('inf') # Уникаємо ділення на нуль
+    if path_loss_n == 0: return float('inf')
     
     exponent_val = (beacon_power_A_dbm - rssi_at_target_dbm) / (10 * path_loss_n)
     try:
         distance_m = 10**exponent_val
-    except OverflowError: # Якщо експонента занадто велика
+    except OverflowError: 
         distance_m = float('inf') 
     return distance_m
 
@@ -158,8 +157,6 @@ def trilaterate_3_beacons(b1_pos, r1_pixels, b2_pos, r2_pixels, b3_pos, r3_pixel
         return None
 
     # Формули для знаходження точки перетину трьох кіл
-    # https://en.wikipedia.org/wiki/Trilateration#Solution_for_three_Cartesian_coordinates_and_three_distances
-    # Або з системи рівнянь:
     # (x-x1)^2 + (y-y1)^2 = r1^2
     # (x-x2)^2 + (y-y2)^2 = r2^2
     # (x-x3)^2 + (y-y3)^2 = r3^2
@@ -174,7 +171,6 @@ def trilaterate_3_beacons(b1_pos, r1_pixels, b2_pos, r2_pixels, b3_pos, r3_pixel
 
     denominator = (A * E - D * B)
     if abs(denominator) < 1e-6: # Маяки (майже) колінеарні, або інша проблема з розв'язком
-        # print(f"Trilateration failed: Denominator near zero ({denominator}). Possible collinearity.")
         return None
 
     calc_x = (C * E - F * B) / denominator
@@ -184,13 +180,12 @@ def trilaterate_3_beacons(b1_pos, r1_pixels, b2_pos, r2_pixels, b3_pos, r3_pixel
     elif abs(E) > 1e-6: # Використовуємо друге лінійне рівняння, якщо E не нуль
         calc_y = (F - D * calc_x) / E
     else:
-        # Це не повинно статися, якщо denominator не нуль, але про всяк випадок
-        # print("Trilateration failed: Both B and E are near zero.")
+      
         return None
         
     return int(round(calc_x)), int(round(calc_y))
 
-# --- Головний цикл ---
+#  Головний цикл 
 running = True
 clock = pygame.time.Clock()
 
@@ -215,7 +210,7 @@ while running:
                 if event.button == 1: # Ліва кнопка - Маяки
                     clicked_on_beacon_this_click = False
                     for i, beacon_obj in enumerate(beacons):
-                        if calculate_distance_pixels(beacon_obj.position, mouse_pos) < beacon_obj.radius + 3: # Збільшив зону кліку
+                        if calculate_distance_pixels(beacon_obj.position, mouse_pos) < beacon_obj.radius + 3: 
                             selected_beacon_index = i
                             clicked_on_beacon_this_click = True; break
                     if not clicked_on_beacon_this_click:
@@ -228,7 +223,7 @@ while running:
                             color = BEACON_COLORS[next_color_index % len(BEACON_COLORS)]
                             next_color_index += 1
                             current_beacon_id = chr(next_beacon_id_char_code)
-                            if next_beacon_id_char_code >= ord('Z'): next_beacon_id_char_code = ord('A') # Простий цикл ID
+                            if next_beacon_id_char_code >= ord('Z'): next_beacon_id_char_code = ord('A') 
                             else: next_beacon_id_char_code +=1
                                 
                             new_beacon = Beacon(tuple(mouse_pos), color, DEFAULT_BEACON_POWER_DBM, current_beacon_id)
@@ -280,7 +275,6 @@ while running:
             elif event.key == pygame.K_c: # Очистити цільову точку та розрахунки
                 target_point_pos = None; reset_calculations()
 
-    # --- Оновлення хвиль ---
     active_waves_next_frame = []
     for beacon_obj in beacons:
         beacon_obj.wave_timer += 1
@@ -305,7 +299,7 @@ while running:
     waves = active_waves_next_frame
 
 
-    # --- Розрахунок RSSI, Відстаней та Трилатерація ---
+    #  Розрахунок RSSI, Відстаней та Трилатерація 
     if target_point_pos:
         beacons_with_valid_data_for_tril = []
         for beacon_obj in beacons:
@@ -344,8 +338,6 @@ while running:
 
         if len(beacons_with_valid_data_for_tril) >= 3:
             # Сортуємо маяки за розрахунковою відстанню (від меншої до більшої)
-            # Це простий спосіб вибрати 3 "найкращих" маяки, якщо їх більше.
-            # В реальних системах можуть використовуватися складніші алгоритми (наприклад, Least Squares для N маяків).
             beacons_with_valid_data_for_tril.sort(key=lambda b: b["dist_pixels"])
             
             # Беремо перші три маяки для трилатерації
@@ -380,13 +372,9 @@ while running:
                     (b2_data["pos"], b2_data["dist_pixels"], b2_data["color"]),
                     (b3_data["pos"], b3_data["dist_pixels"], b3_data["color"])
                 ]
-            # Якщо calculated_pos is None (через колінеарність або помилку в trilaterate_3_beacons),
-            # то trilateration_circles_to_draw залишаться порожніми, а trilaterated_point_pos буде None.
+            
 
-        # Якщо маяків з валідними даними менше 3, але загалом маяків >= 3,
-        # то trilaterated_point_pos залишиться None, і буде показано відповідне повідомлення.
-
-    # --- Рендеринг ---
+    #  Рендеринг 
     # Зона симуляції
     screen.fill(WHITE, (0, 0, SIMULATION_AREA_WIDTH, SCREEN_HEIGHT))
     # Інфо-панель (фон)
@@ -406,7 +394,6 @@ while running:
                 pygame.draw.circle(temp_surface, (*color, alpha), (int(rad), int(rad)), int(rad), WAVE_THICKNESS); 
                 screen.blit(temp_surface, (cx - rad, cy - rad))
             except pygame.error: 
-                # print(f"Pygame error drawing wave: rad={rad}, alpha={alpha}")
                 pass # Ігноруємо помилку і продовжуємо
 
     # Маяки, ID, лінії відстаней
@@ -416,7 +403,7 @@ while running:
         is_used_for_tril = beacon_obj in last_used_beacons_for_tril 
         
         if i == selected_beacon_index:
-            pygame.draw.circle(screen, RED, beacon_obj.position, beacon_obj.radius + 4, 3) # Товстіший контур для вибраного
+            pygame.draw.circle(screen, RED, beacon_obj.position, beacon_obj.radius + 4, 3) 
             outline_color = RED # ID теж буде червоним
         elif is_used_for_tril and target_point_pos: # Підсвітка, якщо використовується
              pygame.draw.circle(screen, ORANGE, beacon_obj.position, beacon_obj.radius + 2, 2)
@@ -485,7 +472,7 @@ while running:
                     except pygame.error: pass
 
 
-    # --- Інформаційна панель ---
+    #  Інформаційна панель 
     INFO_PANEL_X_START = SIMULATION_AREA_WIDTH 
     pygame.draw.rect(screen, GREY, (INFO_PANEL_X_START, 0, INFO_PANEL_WIDTH, SCREEN_HEIGHT)) # Перемальовуємо фон панелі
     pygame.draw.line(screen, BLACK, (INFO_PANEL_X_START, 0), (INFO_PANEL_X_START, SCREEN_HEIGHT), 2)
@@ -529,8 +516,8 @@ while running:
             
             # Додаткова інформація, якщо є ціль
             if target_point_pos:
-                rssi_text = "---"
-                dist_text = "---"
+                rssi_text = ""
+                dist_text = ""
                 if beacon_obj.last_simulated_rssi_at_target is not None:
                     rssi_text = f"{beacon_obj.last_simulated_rssi_at_target:.1f}dBm"
                     if beacon_obj.last_simulated_rssi_at_target < RECEIVER_SENSITIVITY_DBM: rssi_text += " (дуже слабко)"
@@ -607,5 +594,6 @@ while running:
 
     pygame.display.flip()
     clock.tick(60)
+
 
 pygame.quit()
